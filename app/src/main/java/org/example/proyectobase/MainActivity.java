@@ -26,11 +26,19 @@ import org.opencv.imgproc.Imgproc;
 import android.hardware.Camera;
 import android.widget.Toast;
 
+import com.google.vrtoolkit.cardboard.CardboardActivity;
+import com.google.vrtoolkit.cardboard.CardboardView;
 
-public class MainActivity extends Activity implements CameraBridgeViewBase.CvCameraViewListener2{
 
-    private static  final String TAG = "Ejemplo OCV (MainActivity)";
+public class MainActivity extends CardboardActivity implements CameraBridgeViewBase.CvCameraViewListener2{
+
+    private static  final String TAG = "Ejemplo OCV (MainActivity) + Cardboard";
     private CameraBridgeViewBase cameraView;
+
+    private static final boolean VR_MODE = true; // Set VR_MODE to false to select monocular mode.
+    private VrStereoRenderer mStereoRenderer;
+
+
     private BaseLoaderCallback loaderCallback = new BaseLoaderCallback(this) {
         @Override
         public void onManagerConnected(int status) {
