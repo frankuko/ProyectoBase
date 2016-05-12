@@ -20,7 +20,7 @@
     <item
         android:id="@+id/cambiarResolución"
         android:icon="@android:drawable/ic_menu_view"
-        android:title="Cambiar resolución"/>
+        android:title="Cambiar resolución">
         <menu>
             <item
                 android:id="@+id/resolucion_1920x1080"
@@ -36,5 +36,5 @@
                 android:title="320x240"/>
 
         </menu>
-    />
+    </item>
 </menu>

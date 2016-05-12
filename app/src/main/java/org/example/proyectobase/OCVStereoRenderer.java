@@ -1,16 +1,30 @@
 package org.example.proyectobase;
 
+import android.app.Activity;
 import android.content.Context;
+import android.content.res.Resources;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
 import android.opengl.GLES20;
 import android.util.Log;
+
 import com.google.vrtoolkit.cardboard.CardboardView;
 import com.google.vrtoolkit.cardboard.Eye;
 import com.google.vrtoolkit.cardboard.HeadTransform;
 import com.google.vrtoolkit.cardboard.Viewport;
 
-import javax.microedition.khronos.egl.EGLConfig;
+import org.opencv.android.CameraBridgeViewBase;
+import org.opencv.android.Utils;
+import org.opencv.core.CvType;
+import org.opencv.core.Mat;
+import org.opencv.core.MatOfPoint;
+import org.opencv.core.MatOfPoint2f;
+import org.opencv.core.Scalar;
+import org.opencv.core.Size;
+import org.opencv.imgproc.Imgproc;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -18,14 +32,20 @@ import java.io.InputStreamReader;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import javax.microedition.khronos.egl.EGLConfig;
+
 /**
- *
- * Created by dmitrydzz on 18.01.16.
+ * Created by javier on 08/05/2016.
  */
-public class VrStereoRenderer implements CardboardView.StereoRenderer {
+public class OCVStereoRenderer implements CardboardView.StereoRenderer, CameraBridgeViewBase.CvCameraViewListener2 {
+
+
+
+    /****************CARDBOARD******************************/
     private static final String TAG = "VrStereoRenderer";
     private final static int FLOAT_SIZE_BYTES = 4;
     private static final int GL_TEXTURE_EXTERNAL_OES = 0x8D65;
@@ -59,7 +79,8 @@ public class VrStereoRenderer implements CardboardView.StereoRenderer {
     private int mLastLeftEyeFrameCount;
     private int mLastRightEyeFrameCount;
 
-    public VrStereoRenderer(final Context context, final CardboardView cardboardView) {
+    public OCVStereoRenderer(final Context context, final CardboardView cardboardView) {
+
         mContext = context;
         mCardboardView = cardboardView;
 
@@ -76,6 +97,10 @@ public class VrStereoRenderer implements CardboardView.StereoRenderer {
 
         mTransformMatrix = new float[16];
         mRotateMatrix = new float[]{1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1};
+
+
+        /*opencv*/
+
     }
 
     public synchronized void start() {
@@ -151,17 +176,20 @@ public class VrStereoRenderer implements CardboardView.StereoRenderer {
 
         final int cameraFrameCount = mCameraFrameCount.get();
         if ((mLastLeftEyeFrameCount != cameraFrameCount) ||
-            (mLastRightEyeFrameCount != cameraFrameCount) ||
-            (!mCardboardView.getVRMode())) { // getVRMode should be removed. There's a flickering bug in monocular mode.
-                                             // Missed onDrawEye methods cause black screen (only in monocular). So it's a fix.
+                (mLastRightEyeFrameCount != cameraFrameCount) ||
+                (!mCardboardView.getVRMode())) { // getVRMode should be removed. There's a flickering bug in monocular mode.
+            // Missed onDrawEye methods cause black screen (only in monocular). So it's a fix.
 
             GLES20.glUseProgram(mGLProgram);
             checkGlError("draw eye [glUseProgram]");
 
+            //COGEMOS NUEVA IMAGEN
             mSurfaceTexture.updateTexImage();
             mSurfaceTexture.getTransformMatrix(mTransformMatrix);
+
             GLES20.glUniformMatrix4fv(mTransformHandle, 1, false, mTransformMatrix, 0);
             checkGlError("draw eye [glUniformMatrix4fv #1]");
+
             GLES20.glUniformMatrix4fv(mRotateHandle, 1, false, mRotateMatrix, 0);
             checkGlError("draw eye [glUniformMatrix4fv #2]");
 
@@ -180,8 +208,6 @@ public class VrStereoRenderer implements CardboardView.StereoRenderer {
 
             GLES20.glDrawArrays(GLES20.GL_TRIANGLE_FAN, 0, 4);
             checkGlError("draw eye [glDrawArrays]");
-
-
 
             switch (eye.getType()) {
                 case Eye.Type.MONOCULAR:
@@ -250,10 +276,12 @@ public class VrStereoRenderer implements CardboardView.StereoRenderer {
         changeCameraPreviewSize(eyeViewportWidth, eyeViewportHeight);
 
         final SurfaceTexture oldSurfaceTexture = mSurfaceTexture;
+
         mSurfaceTexture = new SurfaceTexture(createTexture());
         mSurfaceTexture.setOnFrameAvailableListener(new SurfaceTexture.OnFrameAvailableListener() {
             @Override
             public void onFrameAvailable(SurfaceTexture surfaceTexture) {
+
                 mCameraFrameCount.incrementAndGet();
 //                if (mCardboardView != null) {
 //                    mCardboardView.requestRender();
@@ -263,7 +291,6 @@ public class VrStereoRenderer implements CardboardView.StereoRenderer {
         if (oldSurfaceTexture != null) {
             oldSurfaceTexture.release();
         }
-
 
         try {
             mCamera.setPreviewTexture(mSurfaceTexture);
@@ -418,5 +445,123 @@ public class VrStereoRenderer implements CardboardView.StereoRenderer {
             }
         }
         return program;
+    }
+
+    /****************OPENCV******************************/
+    private CameraBridgeViewBase cameraView;
+
+    private int indiceCamara; // 0 -> camara trasera y 1 -> camara delantera
+    private int cam_anchura = 1920;
+    private int cam_altura = 1080;
+    private static final String STATE_CAMERA_INDEX = "cameraIndex";
+
+    private int tipoEntrada = 0; // 0 -> camara 1 -> fichero1 2-> fichero2
+    Mat imagenRecurso;
+    boolean recargarRecurso = false;
+
+
+    Mat entrada = null;
+
+    Mat gris = null;
+
+    @Override
+    public void onCameraViewStarted(int width, int height) {
+        cam_altura = height;
+        cam_anchura = width;
+    }
+
+    public Mat onCameraFrame(CameraBridgeViewBase.CvCameraViewFrame inputframe){
+
+        if (tipoEntrada == 0){
+
+            if(entrada != null){
+                entrada.release();
+            }
+
+            if(gris != null)
+            {
+                gris.release();
+            }
+
+        /*entrada = inputframe.rgba().clone();
+        Mat esquina = entrada.submat(0,10,0,10);
+        esquina.setTo(new Scalar(255,255,255,255));*/
+
+
+            entrada = inputframe.rgba().clone();
+
+            gris = inputframe.gray().clone();
+
+
+            //Filtro gaussiano y canny para poder ver las lineas de la imagen
+            Size s = new Size(3,3);
+            Imgproc.GaussianBlur(gris,gris,s,1.5);
+            Imgproc.Canny(gris,gris,45,60,3,true);
+
+            List<MatOfPoint> contornos = new ArrayList<MatOfPoint>();
+
+            //encontramos los contornos en la imagen gris
+            Imgproc.findContours(gris,contornos,new Mat(),Imgproc.RETR_EXTERNAL,Imgproc.CHAIN_APPROX_SIMPLE);
+
+            MatOfPoint2f mMOP2f1 = new MatOfPoint2f();
+            MatOfPoint2f esquinas = new MatOfPoint2f();
+
+            for (int i = 0; i < contornos.size(); i++) {
+
+                //Convertir contornos(i) de MatOfPoint a MatOfPoint2f
+                contornos.get(i).convertTo(mMOP2f1, CvType.CV_32FC2);
+
+
+                //Processing on mMOP2f1 which is in type MatOfPoint2f
+                Imgproc.approxPolyDP(mMOP2f1, esquinas, 5, true);
+
+                //calculamos el area del contorno
+                double area = Imgproc.contourArea(esquinas);
+
+            /*Log.d(TAG,"AREA: "+area+" esquinaWidth: "+esquinas.width()+" esquinaHeigth: "+esquinas.height()+
+            " Esquinas.size "+esquinas.size().toString());*/
+
+
+                if(((esquinas.height() % 2 == 0)) && (area > 300)){
+
+                    //Convertir de nuevo a MatOfPoint y colocar los nuevos valores
+                    esquinas.convertTo(contornos.get(i), CvType.CV_32S);
+
+                    Imgproc.drawContours(entrada, contornos, i, new Scalar(0, 0, 255), -1);
+                }
+            }
+
+
+        }else{
+            if(recargarRecurso == true){
+                imagenRecurso = new Mat();
+
+                //Metemos a un array los ficheros que tenemos
+                int RECURSOS_FICHEROS[] = {0, R.raw.logoastronotuya,R.raw.logoninadelsur};
+
+               // Bitmap bitmap = BitmapFactory.decodeResource( getResources(),RECURSOS_FICHEROS[tipoEntrada]);
+
+                //Convierte el recurso a una map de opencv, despues de pasarlo a bitmap
+
+               // Utils.bitmapToMat(bitmap,imagenRecurso);
+
+                recargarRecurso=false;
+            }
+            entrada = imagenRecurso;
+        }
+
+        Mat salida = entrada;
+        //entrada.release();
+        if(tipoEntrada > 0) //Si estamos mostrando una imagen entonces tenemos que adaptarla a la camara
+            Imgproc.resize(salida,salida,new Size(cam_anchura,cam_altura));
+        return salida;
+    }
+
+    @Override
+    public void onCameraViewStopped() {  }
+
+
+    public void setCameraViewListener(CameraBridgeViewBase cameraView) {
+        cameraView.setCvCameraViewListener(this);
     }
 }
