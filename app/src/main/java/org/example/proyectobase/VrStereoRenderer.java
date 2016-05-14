@@ -10,6 +10,8 @@ import com.google.vrtoolkit.cardboard.Eye;
 import com.google.vrtoolkit.cardboard.HeadTransform;
 import com.google.vrtoolkit.cardboard.Viewport;
 
+import org.example.proyectobase.adapters.CameraProjectionAdapter;
+
 import javax.microedition.khronos.egl.EGLConfig;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -58,6 +60,8 @@ public class VrStereoRenderer implements CardboardView.StereoRenderer {
     private AtomicInteger mCameraFrameCount = new AtomicInteger();
     private int mLastLeftEyeFrameCount;
     private int mLastRightEyeFrameCount;
+
+    public CameraProjectionAdapter cameraProjectionAdapter;
 
     public VrStereoRenderer(final Context context, final CardboardView cardboardView) {
         mContext = context;
@@ -164,6 +168,7 @@ public class VrStereoRenderer implements CardboardView.StereoRenderer {
             checkGlError("draw eye [glUniformMatrix4fv #1]");
             GLES20.glUniformMatrix4fv(mRotateHandle, 1, false, mRotateMatrix, 0);
             checkGlError("draw eye [glUniformMatrix4fv #2]");
+
 
             GLES20.glVertexAttribPointer(mTexCoordHandle, 2, GLES20.GL_FLOAT,
                     false, 0, mTextureVertices);

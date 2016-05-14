@@ -25,7 +25,7 @@ public class OpenCVARActivity extends CardboardActivity {
         cardboardView.setSettingsButtonEnabled(VR_MODE);
 
 
-        mStereoRenderer = new VrStereoRenderer(this, cardboardView);
+        //mStereoRenderer = new VrStereoRenderer(this, cardboardView);
 
         // Associate a CardboardView.StereoRenderer with cardboardView.
         cardboardView.setRenderer(mStereoRenderer);

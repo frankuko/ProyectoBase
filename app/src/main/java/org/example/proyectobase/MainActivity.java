@@ -108,7 +108,7 @@ public class MainActivity extends CardboardActivity implements CameraBridgeViewB
         cardboardView.setVRModeEnabled(VR_MODE);
         cardboardView.setSettingsButtonEnabled(VR_MODE);
 
-        mStereoRenderer = new VrStereoRenderer(this,cardboardView);
+        //mStereoRenderer = new VrStereoRenderer(this,cardboardView);
 
         //PASAR VARIABLES DE OPENCV
 
