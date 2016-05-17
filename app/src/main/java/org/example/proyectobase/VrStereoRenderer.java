@@ -11,12 +11,18 @@ import com.google.vrtoolkit.cardboard.HeadTransform;
 import com.google.vrtoolkit.cardboard.Viewport;
 
 import org.example.proyectobase.adapters.CameraProjectionAdapter;
+import org.opencv.android.CameraBridgeViewBase;
+import org.opencv.core.Core;
+import org.opencv.core.Mat;
+import org.opencv.imgcodecs.Imgcodecs;
+import org.opencv.imgproc.Imgproc;
 
 import javax.microedition.khronos.egl.EGLConfig;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
@@ -82,6 +88,61 @@ public class VrStereoRenderer implements CardboardView.StereoRenderer {
         mRotateMatrix = new float[]{1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1};
     }
 
+    public float[] metodoPrueba(CameraBridgeViewBase.CvCameraViewFrame cameraViewFrame){
+
+        final int cameraFrameCount = mCameraFrameCount.get();
+        if ((mLastLeftEyeFrameCount != cameraFrameCount) ||
+                (mLastRightEyeFrameCount != cameraFrameCount) ||
+                (!mCardboardView.getVRMode())) { // getVRMode should be removed. There's a flickering bug in monocular mode.
+            // Missed onDrawEye methods cause black screen (only in monocular). So it's a fix.
+
+            GLES20.glUseProgram(mGLProgram);
+            checkGlError("draw eye [glUseProgram]");
+
+            Mat imagen = cameraViewFrame.rgba();
+
+            Core.flip(imagen,imagen,0);
+
+
+
+            GLES20.glBindTexture();
+
+
+            //mSurfaceTexture.updateTexImage();
+            //Imgproc.tra
+            //cameraViewFrame.rgba().
+
+
+            //NECESITO LA MATRIZ DE TRANSFORMACION 4X4
+            mSurfaceTexture.getTransformMatrix(mTransformMatrix);
+            GLES20.glUniformMatrix4fv(mTransformHandle, 1, false, mTransformMatrix, 0);
+            checkGlError("draw eye [glUniformMatrix4fv #1]");
+            GLES20.glUniformMatrix4fv(mRotateHandle, 1, false, mRotateMatrix, 0);
+            checkGlError("draw eye [glUniformMatrix4fv #2]");
+
+
+            GLES20.glVertexAttribPointer(mTexCoordHandle, 2, GLES20.GL_FLOAT,
+                    false, 0, mTextureVertices);
+            checkGlError("draw eye [glVertexAttribPointer #1]");
+            GLES20.glVertexAttribPointer(mTriangleVerticesHandle, 2, GLES20.GL_FLOAT,
+                    false, 0, mQuadVertices);
+            checkGlError("draw eye [glVertexAttribPointer #2]");
+            GLES20.glUniform1i(mTexHandle, 0);
+            checkGlError("draw eye [glUniform1i]");
+            GLES20.glEnableVertexAttribArray(mTexCoordHandle);
+            checkGlError("draw eye [glEnableVertexAttribArray #1]");
+            GLES20.glEnableVertexAttribArray(mTriangleVerticesHandle);
+            checkGlError("draw eye [glEnableVertexAttribArray #2]");
+
+            GLES20.glDrawArrays(GLES20.GL_TRIANGLE_FAN, 0, 4);
+            checkGlError("draw eye [glDrawArrays]");
+
+
+            final float[] verticesPrueba = {1.0f, 2.0f, 3.0f, 4.0f};
+            return verticesPrueba;
+        }
+    }
+
     public synchronized void start() {
         if (mIsReady || mIsStarting) {
             return;
@@ -105,6 +166,7 @@ public class VrStereoRenderer implements CardboardView.StereoRenderer {
 
         try {
             mCamera.setPreviewTexture(null);
+
         } catch (IOException e) {
             e.printStackTrace();
         }

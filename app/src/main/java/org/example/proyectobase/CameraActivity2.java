@@ -153,7 +153,7 @@ public class CameraActivity2 extends CardboardActivity
 
         //OPENGL Vista de la camara
         //final CardboardView cardboardSurfaceView = (CardboardView)findViewById(R.id.cardboard_view);
-       /* CardboardView cardboardSurfaceView = new CardboardView(this);
+        CardboardView cardboardSurfaceView = new CardboardView(this);
         cardboardSurfaceView.setSettingsButtonEnabled(true);
         cardboardSurfaceView.setVRModeEnabled(true);
 
@@ -163,7 +163,7 @@ public class CameraActivity2 extends CardboardActivity
         cardboardSurfaceView.setLayoutParams(new FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.MATCH_PARENT,
                 FrameLayout.LayoutParams.MATCH_PARENT));
-        layout.addView(cardboardSurfaceView);*/
+        layout.addView(cardboardSurfaceView);
 
         /*GLSurfaceView glSurfaceView = new GLSurfaceView(this);
         glSurfaceView.getHolder().setFormat(PixelFormat.TRANSPARENT);
@@ -176,15 +176,15 @@ public class CameraActivity2 extends CardboardActivity
 
         mCameraProjectionAdapter = new CameraProjectionAdapter();
 
-        //mARRenderer = new VrStereoRenderer(this,cardboardSurfaceView);
+        mARRenderer = new VrStereoRenderer(this,cardboardSurfaceView);
         //mARRenderer = new ARCubeRenderer();
 
-       // mARRenderer.cameraProjectionAdapter = mCameraProjectionAdapter;
+        mARRenderer.cameraProjectionAdapter = mCameraProjectionAdapter;
 
         //escala de la imagen a 1.0, definimos el cubo a 0.5f
 
-        //cardboardSurfaceView.setRenderer(mARRenderer);
-        //setCardboardView(cardboardSurfaceView);
+        cardboardSurfaceView.setRenderer(mARRenderer);
+        setCardboardView(cardboardSurfaceView);
         //glSurfaceView.setRenderer(mARRenderer);
 
 
@@ -264,7 +264,7 @@ public class CameraActivity2 extends CardboardActivity
     public Mat onCameraFrame(CameraBridgeViewBase.CvCameraViewFrame inputFrame) {
         final Mat rgba = inputFrame.rgba();
 
-
+        mARRenderer.metodoPrueba(inputFrame);
 
 
         if(mImageDetectionFilters != null) {
