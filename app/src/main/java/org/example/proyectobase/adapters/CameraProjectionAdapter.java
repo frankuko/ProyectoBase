@@ -5,7 +5,6 @@ import android.hardware.Camera.Size;
 import android.opengl.Matrix;
 
 import org.opencv.core.CvType;
-import org.opencv.core.Mat;
 import org.opencv.core.MatOfDouble;
 
 /**

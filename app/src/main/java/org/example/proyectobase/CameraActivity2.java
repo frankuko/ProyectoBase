@@ -5,8 +5,6 @@ import android.graphics.PixelFormat;
 import android.hardware.Camera;
 import android.opengl.GLSurfaceView;
 import android.os.Bundle;
-import android.support.v7.app.ActionBarActivity;
-import android.text.Html;
 import android.util.Log;
 import android.view.Window;
 import android.view.WindowManager;
@@ -14,6 +12,7 @@ import android.widget.FrameLayout;
 
 import com.google.vrtoolkit.cardboard.CardboardActivity;
 import com.google.vrtoolkit.cardboard.CardboardView;
+
 
 import org.example.proyectobase.adapters.CameraProjectionAdapter;
 import org.example.proyectobase.filters.ar.ARFilter;
@@ -26,9 +25,6 @@ import org.opencv.android.LoaderCallbackInterface;
 import org.opencv.android.OpenCVLoader;
 import org.opencv.core.Core;
 import org.opencv.core.Mat;
-import org.opencv.core.Size;
-import org.opencv.imgcodecs.Imgcodecs;
-import org.opencv.imgproc.Imgproc;
 
 import java.io.IOException;
 import java.util.List;
@@ -71,8 +67,8 @@ public class CameraActivity2 extends CardboardActivity
 
     private CameraProjectionAdapter mCameraProjectionAdapter;
 
-    //private VrStereoRenderer mARRenderer;
-    private ARCubeRenderer mARRenderer;
+    private VrStereoRenderer mARRenderer;
+    //private ARCubeRenderer mARRenderer;
 
     private boolean mIsPhotoPending;
 
@@ -155,41 +151,41 @@ public class CameraActivity2 extends CardboardActivity
                 FrameLayout.LayoutParams.MATCH_PARENT));
         layout.addView(mCameraView);
 
-        //OPENGL
-        //CardboardView cardboardSurfaceView = (CardboardView)findViewById(R.id.cardboard_view);
-        /*CardboardView cardboardSurfaceView = new CardboardView(this);
+        //OPENGL Vista de la camara
+        //final CardboardView cardboardSurfaceView = (CardboardView)findViewById(R.id.cardboard_view);
+       /* CardboardView cardboardSurfaceView = new CardboardView(this);
         cardboardSurfaceView.setSettingsButtonEnabled(true);
         cardboardSurfaceView.setVRModeEnabled(true);
 
-        cardboardSurfaceView.getHolder().setFormat(PixelFormat.TRANSPARENT);
-        cardboardSurfaceView.setEGLConfigChooser(8,8,8,8,0,0);
+        cardboardSurfaceView.getHolder().setFormat(PixelFormat.TRANSLUCENT);
+        cardboardSurfaceView.setEGLConfigChooser(8,8,8,8,16,0);
         cardboardSurfaceView.setZOrderOnTop(true);
         cardboardSurfaceView.setLayoutParams(new FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.MATCH_PARENT,
                 FrameLayout.LayoutParams.MATCH_PARENT));
         layout.addView(cardboardSurfaceView);*/
 
-        GLSurfaceView glSurfaceView = new GLSurfaceView(this);
+        /*GLSurfaceView glSurfaceView = new GLSurfaceView(this);
         glSurfaceView.getHolder().setFormat(PixelFormat.TRANSPARENT);
         glSurfaceView.setEGLConfigChooser(8, 8, 8, 8, 0, 0);
         glSurfaceView.setZOrderOnTop(true);
         glSurfaceView.setLayoutParams(new FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.MATCH_PARENT,
                 FrameLayout.LayoutParams.MATCH_PARENT));
-        layout.addView(glSurfaceView);
+        layout.addView(glSurfaceView);*/
 
         mCameraProjectionAdapter = new CameraProjectionAdapter();
 
         //mARRenderer = new VrStereoRenderer(this,cardboardSurfaceView);
-        mARRenderer = new ARCubeRenderer();
+        //mARRenderer = new ARCubeRenderer();
 
-        mARRenderer.cameraProjectionAdapter = mCameraProjectionAdapter;
+       // mARRenderer.cameraProjectionAdapter = mCameraProjectionAdapter;
 
         //escala de la imagen a 1.0, definimos el cubo a 0.5f
 
         //cardboardSurfaceView.setRenderer(mARRenderer);
         //setCardboardView(cardboardSurfaceView);
-        glSurfaceView.setRenderer(mARRenderer);
+        //glSurfaceView.setRenderer(mARRenderer);
 
 
 
@@ -215,7 +211,8 @@ public class CameraActivity2 extends CardboardActivity
 
         mCameraProjectionAdapter.setCameraParameters(parameters,size);
 
-        mCameraView.setMaxFrameSize(size.width, size.height);
+        //mCameraView.setMaxFrameSize(size.width, size.height);
+
         mCameraView.setCvCameraViewListener(this);
 
     }
@@ -262,17 +259,32 @@ public class CameraActivity2 extends CardboardActivity
 
     }
 
+    int i = 0;
     @Override
     public Mat onCameraFrame(CameraBridgeViewBase.CvCameraViewFrame inputFrame) {
         final Mat rgba = inputFrame.rgba();
 
+
+
+
         if(mImageDetectionFilters != null) {
-            mImageDetectionFilters[mImageDetectionFilterIndex].apply(rgba,rgba);
+
+
+
+            if(i==10){
+                mImageDetectionFilters[mImageDetectionFilterIndex].apply(rgba,rgba);
+                i=0;
+            }
+
+
+
+            i++;
+
         }
         if(mIsCameraFrontFacing){
             Core.flip(rgba, rgba,1);
         }
-        return rgba;
+        return inputFrame.gray();
     }
 }
 

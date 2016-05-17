@@ -1,6 +1,5 @@
 package org.example.proyectobase;
 
-import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
 
 import org.example.proyectobase.adapters.CameraProjectionAdapter;

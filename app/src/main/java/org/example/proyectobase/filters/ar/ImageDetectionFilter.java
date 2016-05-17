@@ -3,7 +3,6 @@ package org.example.proyectobase.filters.ar;
 import android.content.Context;
 
 import org.example.proyectobase.adapters.CameraProjectionAdapter;
-import org.example.proyectobase.filters.Filter;
 import org.opencv.android.Utils;
 import org.opencv.calib3d.Calib3d;
 import org.opencv.core.CvType;

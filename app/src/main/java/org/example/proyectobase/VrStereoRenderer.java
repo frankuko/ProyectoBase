@@ -138,6 +138,7 @@ public class VrStereoRenderer implements CardboardView.StereoRenderer {
     public void onNewFrame(HeadTransform headTransform) {
     }
 
+    //para cada ojo dibuja su contenido
     @Override
     public void onDrawEye(Eye eye) {
         if (!mIsReady && mIsStarting) {
